@@ -21,10 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // To parse incoming JSON requests
 app.use(express.static("public")); // Serve static files
 
-// Connect to MongoDB
-
-// Routes
-
+// Routes (endpoints)
 app.use("/identify", authRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
