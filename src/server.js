@@ -1,10 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const { connectDB } = require("./dbConnection");
-const authRoutes = require("./routes/authRoutes");
 const cookieParser = require("cookie-parser");
+
+const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+
 const { authenticateToken, allowedTo } = require("./middleware/authMiddleware");
 
 connectDB().then(() => {
@@ -13,6 +15,7 @@ connectDB().then(() => {
 
 // Initialize Express app
 const app = express();
+
 app.use(cookieParser());
 
 // Middleware
@@ -25,6 +28,7 @@ app.use(express.static("public")); // Serve static files
 app.use("/identify", authRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
+
 app.get(
   "/student1",
   authenticateToken,
@@ -33,6 +37,7 @@ app.get(
     res.render("student1", { user: req.user });
   }
 );
+
 app.get(
   "/student2",
   authenticateToken,

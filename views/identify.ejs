@@ -32,7 +32,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('/identify', {
+                const response = await fetch('/identify/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -43,7 +43,6 @@
 
                 if (response.status === 200) {
                     const data = await response.json(); // Assuming your server responds with JSON
-                    localStorage.setItem('token', data.token); // Store the token
                     window.location.href = `/users/${userID}`; // Redirect to the user's profile page
 
                 } else {

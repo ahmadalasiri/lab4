@@ -31,11 +31,6 @@ const users = [
 ];
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) {
-    console.log("Reusing MongoDB connected");
-    return;
-  }
-
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
     console.log(`MongoDB Connected`);
