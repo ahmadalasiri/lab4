@@ -19,30 +19,6 @@ connectDB().then(() => {
   console.log("Connected to MongoDB");
 });
 
-const authenticateToken = (req, res, next) => {
-  const cookie = req.cookies;
-
-  const token = req.cookies.access_token;
-  if (!token) return res.redirect("/identify");
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, user) => {
-    if (error) return res.redirect("/identify");
-    req.user = user;
-    next();
-  });
-};
-
-// Authorization (User permissions)
-const allowedTo =
-  (...roles) =>
-  (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(401).send("Unauthorized");
-    }
-
-    next();
-  };
-
 app.get("/", (req, res) => {
   res.redirect("/identify");
 });
@@ -82,6 +58,30 @@ app.post("/identify", async (req, res) => {
 app.get("/granted", authenticateToken, (req, res) => {
   res.render("start.ejs");
 });
+
+const authenticateToken = (req, res, next) => {
+  const cookie = req.cookies;
+
+  const token = req.cookies.access_token;
+  if (!token) return res.redirect("/identify");
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, user) => {
+    if (error) return res.redirect("/identify");
+    req.user = user;
+    next();
+  });
+};
+
+// Authorization (User permissions)
+const allowedTo =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    next();
+  };
 
 app.get("/admin", authenticateToken, allowedTo("admin"), async (req, res) => {
   const users = await User.find({});
