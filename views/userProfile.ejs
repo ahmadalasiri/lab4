@@ -4,23 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
-    <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
-    <div class="container">
-        <h1>User Profile</h1>
+    <h1>User Profile</h1>
 
-        <!-- Display user information -->
-        <h2>Hello, <%= user.name %>!</h2>
-        <p>User ID: <%= user.userID %>
-        </p>
-        <p>Role: <%= user.role %>
-        </p>
+    <h2>Hello, <%= user.name %>!</h2>
+    <h2>User ID: <%= user.userID %>
+    </h2>
+    <h2>Role: <%= user.role %>
+    </h2>
 
-        <a href="/logout">Logout</a> <!-- Example link for logout -->
-    </div>
 </body>
 
 </html>

@@ -1,40 +1,99 @@
-require("dotenv").config();
 const express = require("express");
-const { connectDB } = require("./dbConnection");
-const cookieParser = require("cookie-parser");
-
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-
-const { authenticateToken, allowedTo } = require("./middleware/authMiddleware");
-
-connectDB().then(() => {
-  console.log("Connected to DB");
-});
-
-// Initialize Express app
 const app = express();
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const User = require("./userModel");
+require("dotenv").config();
 
+app.set("view engine", "ejs");
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Middleware
-app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // To parse incoming JSON requests
-app.use(express.static("public")); // Serve static files
+const connectDB = async () => {
+  await mongoose.connect("mongodb://localhost:27017/lab4");
+};
 
-// Routes (endpoints)
-app.use("/identify", authRoutes);
-app.use("/users", userRoutes);
-app.use("/admin", adminRoutes);
+connectDB().then(() => {
+  console.log("Connected to MongoDB");
+});
+
+const authenticateToken = (req, res, next) => {
+  const cookie = req.cookies;
+
+  const token = req.cookies.access_token;
+  if (!token) return res.redirect("/identify");
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, user) => {
+    if (error) return res.redirect("/identify");
+    req.user = user;
+    next();
+  });
+};
+
+// Authorization (User permissions)
+const allowedTo =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    next();
+  };
+
+app.get("/", (req, res) => {
+  res.redirect("/identify");
+});
+
+app.get("/identify", (req, res) => {
+  res.render("identify.ejs");
+});
+
+app.post("/identify", async (req, res) => {
+  const { userID, password } = req.body;
+  const user = await User.findOne({
+    userID: userID,
+  });
+
+  if (!user) {
+    res.status(400).send("user not found");
+  }
+
+  let isCorrectPassword = await bcrypt.compare(password, user.password);
+  if (!isCorrectPassword) {
+    return res.status(400).send("invalid password");
+  }
+
+  const token = jwt.sign(
+    { userID: user.userID, role: user.role },
+    process.env.ACCESS_TOKEN_SECRET
+  );
+
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  });
+
+  res.redirect("/granted");
+});
+
+app.get("/granted", authenticateToken, (req, res) => {
+  res.render("start.ejs");
+});
+
+app.get("/admin", authenticateToken, allowedTo("admin"), async (req, res) => {
+  const users = await User.find({});
+  res.render("admin.ejs", { users });
+});
 
 app.get(
   "/student1",
   authenticateToken,
   allowedTo("student1", "teacher", "admin"),
   (req, res) => {
-    res.render("student1", { user: req.user });
+    res.render("student1.ejs", { user: req.user });
   }
 );
 
@@ -43,40 +102,59 @@ app.get(
   authenticateToken,
   allowedTo("student2", "teacher", "admin"),
   (req, res) => {
-    res.render("student2", { user: req.user });
+    res.render("student2.ejs");
   }
 );
 
 app.get(
   "/teacher",
   authenticateToken,
-  allowedTo("teacher", "admin"),
+  allowedTo("teacher.ejs", "admin"),
   (req, res) => {
-    res.render("teacher", { user: req.user });
+    res.render("teacher");
   }
 );
-app.get("/granted", authenticateToken, (req, res) => {
-  console.log("req.user", req.user);
-  res.render("granted", { user: req.user }); // Pass user info if needed
+
+app.get("/register", (req, res) => {
+  res.render("register.ejs");
 });
 
-app.get("/", (req, res) => {
-  res.render("index");
+app.post("/register", async (req, res) => {
+  const { userID, name, password, role } = req.body;
+
+  if (!userID || !password || !role) {
+    return res.status(400).send("userID, password and role are required");
+  }
+
+  if (role !== "student" && role !== "teacher") {
+    return res.status(400).send("role must be student or teacher");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await User.create({
+    userID,
+    name,
+    password: hashedPassword,
+    role,
+  });
+
+  res.redirect("/identify");
 });
 
-app.get("/logout", (req, res) => {
-  res.clearCookie("access_token");
-  res.redirect("/");
+app.get("/users/:userId", authenticateToken, async (req, res) => {
+  const user = await User.findOne({ userID: req.params.userId });
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+
+  if (user.userID !== req.user.userID) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  res.render("userProfile.ejs", { user });
 });
 
-// Global error handling (optional)
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(400).send(`${err.message}`);
-});
-
-// Start the server
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(8000, () => {
+  console.log(`Server running on http//localhost:8000`);
 });

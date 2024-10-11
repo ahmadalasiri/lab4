@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// Define the user schema
 const userSchema = new mongoose.Schema({
   userID: {
     type: String,
@@ -13,7 +12,6 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["student", "student1", "student2", "teacher", "admin"],
     required: true,
   },
   password: {
@@ -22,8 +20,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// Create the User model from the schema
 const User = mongoose.model("User", userSchema);
 
-// Export the User model
 module.exports = User;
