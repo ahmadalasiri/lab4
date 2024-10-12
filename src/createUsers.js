@@ -31,7 +31,7 @@ const users = [
 ];
 
 const createUsers = async () => {
-  await mongoose.connect("mongodb://localhost:27017/lab4");
+  await mongoose.connect(process.env.MONGO_URI);
 
   await User.deleteMany({});
   await User.insertMany(users);

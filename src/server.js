@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 const connectDB = async () => {
-  await mongoose.connect("mongodb://localhost:27017/lab4");
+  await mongoose.connect(process.env.MONGO_URI);
 };
 
 connectDB().then(() => {
@@ -55,13 +55,7 @@ app.post("/identify", async (req, res) => {
   res.redirect("/granted");
 });
 
-app.get("/granted", authenticateToken, (req, res) => {
-  res.render("start.ejs");
-});
-
 const authenticateToken = (req, res, next) => {
-  const cookie = req.cookies;
-
   const token = req.cookies.access_token;
   if (!token) return res.redirect("/identify");
 
@@ -82,6 +76,10 @@ const allowedTo =
 
     next();
   };
+
+app.get("/granted", authenticateToken, (req, res) => {
+  res.render("start.ejs");
+});
 
 app.get("/admin", authenticateToken, allowedTo("admin"), async (req, res) => {
   const users = await User.find({});
