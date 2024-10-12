@@ -28,54 +28,66 @@ app.get("/identify", (req, res) => {
 });
 
 app.post("/identify", async (req, res) => {
-  const { userID, password } = req.body;
+  try {
+    const { userID, password } = req.body;
 
-  const user = await User.findOne({
-    userID: userID,
-  });
+    const user = await User.findOne({
+      userID: userID,
+    });
 
-  if (!user) {
-    res.status(400).send("user not found");
+    if (!user) {
+      res.status(400).send("user not found");
+    }
+
+    let isCorrectPassword = await bcrypt.compare(password, user.password);
+    if (!isCorrectPassword) {
+      return res.status(400).send("invalid password");
+    }
+
+    const token = jwt.sign(
+      { userID: user.userID, role: user.role },
+      process.env.ACCESS_TOKEN_SECRET
+    );
+
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
+
+    res.redirect(`/users/${user.userID}`);
+  } catch (error) {
+    res.status(400).send(error.message);
   }
-
-  let isCorrectPassword = await bcrypt.compare(password, user.password);
-  if (!isCorrectPassword) {
-    return res.status(400).send("invalid password");
-  }
-
-  const token = jwt.sign(
-    { userID: user.userID, role: user.role },
-    process.env.ACCESS_TOKEN_SECRET
-  );
-
-  res.cookie("access_token", token, {
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-  });
-
-  res.redirect(`/users/${user.userID}`);
 });
 
 const authenticateToken = (req, res, next) => {
-  const token = req.cookies.access_token;
-  if (!token) return res.redirect("/identify");
+  try {
+    const token = req.cookies.access_token;
+    if (!token) return res.redirect("/identify");
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, user) => {
-    if (error) return res.redirect("/identify");
-    req.user = user;
-    next();
-  });
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, user) => {
+      if (error) return res.redirect("/identify");
+      req.user = user;
+      next();
+    });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
 };
 
 // Authorization (User permissions)
 const allowedTo =
   (...roles) =>
   (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(401).send("Unauthorized");
-    }
+    try {
+      if (!roles.includes(req.user.role)) {
+        return res.status(401).send("Unauthorized");
+      }
 
-    next();
+      next();
+    } catch (error) {
+      res.status(400).send(error.message);
+    }
   };
 
 app.get("/granted", authenticateToken, (req, res) => {
@@ -142,16 +154,20 @@ app.post("/register", async (req, res) => {
 });
 
 app.get("/users/:userId", authenticateToken, async (req, res) => {
-  const user = await User.findOne({ userID: req.params.userId });
-  if (!user) {
-    return res.status(404).send("User not found");
-  }
+  try {
+    const user = await User.findOne({ userID: req.params.userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
 
-  if (user.userID !== req.user.userID) {
-    return res.status(401).send("Unauthorized");
-  }
+    if (user.userID !== req.user.userID) {
+      return res.status(401).send("Unauthorized");
+    }
 
-  res.render("userProfile.ejs", { user });
+    res.render("userProfile.ejs", { user });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
 });
 
 app.listen(8000, () => {
