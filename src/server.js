@@ -56,7 +56,7 @@ app.post("/identify", async (req, res) => {
 
     res.redirect(`/users/${user.userID}`);
   } catch (error) {
-    res.status(400).send(error.message);
+    console.log("Error:", error);
   }
 });
 
@@ -71,7 +71,7 @@ const authenticateToken = (req, res, next) => {
       next();
     });
   } catch (error) {
-    res.status(400).send(error.message);
+    console.log("Error:", error);
   }
 };
 
@@ -86,7 +86,7 @@ const allowedTo =
 
       next();
     } catch (error) {
-      res.status(400).send(error.message);
+      console.log("Error:", error);
     }
   };
 
@@ -166,7 +166,7 @@ app.get("/users/:userId", authenticateToken, async (req, res) => {
 
     res.render("userProfile.ejs", { user });
   } catch (error) {
-    res.status(400).send(error.message);
+    console.log("Error:", error);
   }
 });
 
