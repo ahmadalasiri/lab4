@@ -4,8 +4,8 @@
 
 1. **Clone the Repository**:
 
-- git clone repository-url
-- cd repository-name
+- git clone https://github.com/ahmadalasiri/lab4.git
+- cd lab4
 
 2. **Install Dependencies**:
 
@@ -14,12 +14,14 @@
 3. **Create a `.env` file and add the following variables**:
 
 - ACCESS_TOKEN_SECRET=<your_jwt_secret>
+- MONGO_URI=<your_mongodb_uri>
 
 ## Running the Application
 
 - node .\src\server.js
+- nodemon .\src\server.js
 
-## To add users run the following command:
+## To create initial users in the database
 
 - node .\src\createUsers.js
 

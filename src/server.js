@@ -29,6 +29,7 @@ app.get("/identify", (req, res) => {
 
 app.post("/identify", async (req, res) => {
   const { userID, password } = req.body;
+
   const user = await User.findOne({
     userID: userID,
   });
@@ -91,7 +92,7 @@ app.get(
   authenticateToken,
   allowedTo("student1", "teacher", "admin"),
   (req, res) => {
-    res.render("student1.ejs", { user: req.user });
+    res.render("student1.ejs");
   }
 );
 
@@ -107,9 +108,9 @@ app.get(
 app.get(
   "/teacher",
   authenticateToken,
-  allowedTo("teacher.ejs", "admin"),
+  allowedTo("teacher", "admin"),
   (req, res) => {
-    res.render("teacher");
+    res.render("teacher.ejs");
   }
 );
 
@@ -120,8 +121,8 @@ app.get("/register", (req, res) => {
 app.post("/register", async (req, res) => {
   const { userID, name, password, role } = req.body;
 
-  if (!userID || !password || !role) {
-    return res.status(400).send("userID, password and role are required");
+  if (!userID || !password || !role || !name) {
+    return res.status(400).send("userID, password, role and name are required");
   }
 
   if (role !== "student" && role !== "teacher") {
