@@ -53,7 +53,7 @@ app.post("/identify", async (req, res) => {
     maxAge: 24 * 60 * 60 * 1000, // 1 day
   });
 
-  res.redirect("/granted");
+  res.redirect(`/users/${user.userID}`);
 });
 
 const authenticateToken = (req, res, next) => {
